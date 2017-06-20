@@ -10,7 +10,8 @@ cubism_contextPrototype.axis = function() {
 
   function axis(selection) {
     var id = ++cubism_id,
-        tick;
+        tick,
+        tickLine;
 
     var g = selection.append("svg")
         .datum({id: id})
@@ -19,6 +20,7 @@ cubism_contextPrototype.axis = function() {
       .append("g")
         .attr("transform", "translate(0," + (axis_.orient() === "top" ? 27 : 4) + ")")
         .call(axis_);
+    tickLine = g.append('line').style('display', 'none').attr('y1', 0).attr('y2', -2);
 
     context.on("change.axis-" + id, function() {
       g.call(axis_);
@@ -30,12 +32,18 @@ cubism_contextPrototype.axis = function() {
     context.on("focus.axis-" + id, function(i) {
       if (tick) {
         if (i == null) {
-          tick.style("display", "none");
           g.selectAll("text").style("fill-opacity", null);
+          g.selectAll("line").style("display", null);
+          tick.style("display", "none");
+          tickLine.style("display", "none");
         } else {
-          tick.style("display", null).attr("x", i).text(format(scale.invert(i)));
-          var dx = tick.node().getComputedTextLength() + 6;
-          g.selectAll("text").style("fill-opacity", function(d) { return Math.abs(scale(d) - i) < dx ? 0 : 1; });
+          tick.style("display", null).text(format(scale.invert(i)));
+          tickLine.style("display", null).attr('x1', i).attr('x2', i);
+          var tickWidth = tick.node().getComputedTextLength();
+          var tickI = Math.min(Math.max(tickWidth/2, i), context.size() - tickWidth/2);
+          tick.attr("x", tickI);
+          g.selectAll("text").style("fill-opacity", function(d) { return Math.abs(scale(d) - i) < tickWidth + 6 ? 0 : 1; });
+          g.selectAll("line").style("display", function(d) { return Math.abs(scale(d) - i) < tickWidth + 6 ? 'none' : null; });
         }
       }
     });
